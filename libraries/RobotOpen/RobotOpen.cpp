@@ -234,7 +234,7 @@ void RobotOpenClass::syncDS() {
 
     // publish DS data
     if ((millis() - _lastDSLoop) > DS_INTERVAL_MS) { 
-        if (_dashboardPacketQueued)
+        if (_outgoingPacketSize == 1 || _dashboardPacketQueued)
             publishDS();
         _lastDSLoop = millis();
     }
