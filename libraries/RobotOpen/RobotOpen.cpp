@@ -57,6 +57,8 @@ static boolean firstEnableLoop = true;
 static unsigned char _pwmSerialData[14];
 static unsigned char _solenoidSerialData[14];
 
+static boolean acceptingDebugData = false;
+
 
 
 /* CRC lookup table */
@@ -162,8 +164,8 @@ void RobotOpenClass::onDisable() {
 
 void RobotOpenClass::xmitPWM() {
     // Update the PWM generator values over serial
-    static unsigned int crc16_pwm = calc_crc16(_pwmSerialData, 12);
-    _pwmSerialData[12] = crc16_pwm >> 8;
+    unsigned int crc16_pwm = calc_crc16(_pwmSerialData, 12);
+    _pwmSerialData[12] = (unsigned char)(crc16_pwm >> 8);
     _pwmSerialData[13] = (unsigned char)(crc16_pwm & 0xFF);
     for (int i = 0; i <= 13; i++)
         Serial.write(_pwmSerialData[i]);
@@ -171,8 +173,8 @@ void RobotOpenClass::xmitPWM() {
 
 void RobotOpenClass::xmitSolenoid() {
     // Update the solenoid values over serial
-    static unsigned int crc16_solenoid = calc_crc16(_solenoidSerialData, 12) + 1;
-    _solenoidSerialData[12] = crc16_solenoid >> 8;
+    unsigned int crc16_solenoid = calc_crc16(_solenoidSerialData, 12) + 1;
+    _solenoidSerialData[12] = (unsigned char)(crc16_solenoid >> 8);
     _solenoidSerialData[13] = (unsigned char)(crc16_solenoid & 0xFF);
     for (int i = 0; i <= 13; i++)
         Serial.write(_solenoidSerialData[i]);
@@ -217,10 +219,13 @@ void RobotOpenClass::syncDS() {
         whileDisabled();
 
     // run timed tasks
-    if ((millis() - _lastTimedLoop) > TIMED_TASK_INTERVAL_MS) { 
+    if ((millis() - _lastTimedLoop) > TIMED_TASK_INTERVAL_MS) {
+        acceptingDebugData = true;
         if (whileTimedTasks)
             whileTimedTasks();
         _lastTimedLoop = millis();
+    } else {
+        acceptingDebugData = false;
     }
 
     // ensure we only accept values for the DS packet for one debug loop and that data was actually published
@@ -236,19 +241,21 @@ void RobotOpenClass::syncDS() {
 }
 
 void RobotOpenClass::log(String data) {
-    int dataLength = data.length();
-    char logData[dataLength+1];
+    if (acceptingDebugData) {
+        int dataLength = data.length();
+        char logData[dataLength+1];
 
-    logData[0] = 'p';
+        logData[0] = 'p';
 
-    for (int i=0; i < dataLength; i++) {
-        logData[i+1] = data[i];
-    }
+        for (int i=0; i < dataLength; i++) {
+            logData[i+1] = data[i];
+        }
 
-    if (_remotePort != 0) {
-        Udp.beginPacket(_remoteIp, _remotePort);
-        Udp.write((uint8_t *)logData, dataLength+1);
-        Udp.endPacket();
+        if (_remotePort != 0) {
+            Udp.beginPacket(_remoteIp, _remotePort);
+            Udp.write((uint8_t *)logData, dataLength+1);
+            Udp.endPacket();
+        }
     }
 }
 
