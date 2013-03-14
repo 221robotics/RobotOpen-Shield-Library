@@ -213,6 +213,8 @@ void RobotOpenClass::syncDS() {
     handleData();
 
     // Run user provided loops
+    if (whileTimedTasks)
+        whileTimedTasks();
     if (_enabled && whileEnabled)
         whileEnabled();
     if (!_enabled && whileDisabled)
@@ -221,8 +223,6 @@ void RobotOpenClass::syncDS() {
     // run timed tasks
     if ((millis() - _lastTimedLoop) > TIMED_TASK_INTERVAL_MS) {
         acceptingDebugData = true;
-        if (whileTimedTasks)
-            whileTimedTasks();
         _lastTimedLoop = millis();
     } else {
         acceptingDebugData = false;
