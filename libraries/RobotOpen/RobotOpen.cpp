@@ -49,6 +49,9 @@ static unsigned long _lastPacket = 0;       // Keeps track of the last time (ms)
 static unsigned long _lastTimedLoop = 0;    // Keeps track of the last time the timed loop ran
 static unsigned long _lastDSLoop = 0;       // Keeps track of the last time we published DS data
 
+// milliseconds without receiving DS packet before we consider ourselves 'disconnected'
+static int connection_timeout = 200;
+
 static ROParameter* params[100];
 static unsigned char paramsLength = 0;
 static boolean firstEnableLoop = true;
@@ -116,6 +119,9 @@ void RobotOpenClass::setIP(IPAddress newIP) {
     ip = newIP;
 }
 
+void RobotOpenClass::setTimeout(int new_timeout) {
+    connection_timeout = new_timeout;
+}
 
 void RobotOpenClass::begin(LoopCallback *enabledCallback, LoopCallback *disabledCallback, LoopCallback *timedtasksCallback) {
     // Setup callbacks
@@ -185,7 +191,7 @@ void RobotOpenClass::syncDS() {
     wdt_reset();
   
     // detect disconnect
-    if ((millis() - _lastPacket) > 200) {  // Disable the robot, drop the connection
+    if ((millis() - _lastPacket) > connection_timeout) {  // Disable the robot, drop the connection
         _enabled = false;
         // NO CONNECTION
         if (!firstEnableLoop) {
@@ -441,13 +447,13 @@ void RobotOpenClass::publishDS() {
 }
 
 void RobotOpenClass::writePWM(byte channel, byte pwmVal) {
-    if (_enabled && channel < 10) {
+    if (channel < 10) {
         _pwmSerialData[channel+2] = pwmVal;
     }
 }
 
 void RobotOpenClass::writeSolenoid(byte channel, uint8_t state) {
-    if (_enabled && channel < 8) {
+    if (channel < 8) {
         _solenoidSerialData[channel+2] = state;
     }
 }
