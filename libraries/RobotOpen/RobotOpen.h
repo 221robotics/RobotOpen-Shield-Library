@@ -9,6 +9,8 @@
 #include "Arduino.h"
 #include <ROJoystick.h>
 #include <ROPWM.h>
+#include <ROAnalog.h>
+#include <RODigitalIO.h>
 #include <RODashboard.h>
 #include <ROSolenoid.h>
 #include <ROStatus.h>
@@ -65,7 +67,7 @@ public:
     static void xmitSolenoid();
 
     // Overloaded calls to publish back data
-    static boolean publish(String id, unsigned char val);
+    static boolean publish(String id, byte val);
     static boolean publish(String id, int val);
     static boolean publish(String id, long val);
     static boolean publish(String id, float val);
